@@ -11,6 +11,25 @@ import SwiftyMath
 
 class KhHomologyTests: XCTestCase {
     
+    func test() {
+        Logger.activate(.storage)
+        Storage.setDir("/Users/taketo/Projects/SwiftyMath/Data/")
+        
+        let skip = ["K11a279", "K11a308", "K11a346", "K11a358"]
+        for K in Link.list(.knot, crossing: 3 ... 11) {
+            if skip.contains(K.name) {
+                continue
+            }
+            
+            let Kh = K.KhHomology(𝐙.self, useCache: true)
+            XCTAssertEqual(Kh.qEulerCharacteristic, K.JonesPolynomial(normalized: false))
+            
+            print(K.name)
+            Kh.printTable()
+            print()
+        }
+    }
+    
     func test3_1_Z() {
         let K = Knot(3, 1)
         let Kh = K.KhHomology(𝐙.self)
