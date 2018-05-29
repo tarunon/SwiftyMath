@@ -15,7 +15,7 @@ class KhHomologyTests: XCTestCase {
         Logger.activate(.storage)
         Storage.setDir("/Users/taketo/Projects/SwiftyMath/Data/")
         
-        let skip = ["K11a279", "K11a308", "K11a346", "K11a358"]
+        let skip = ["K11a279", "K11a308", "K11a346", "K11a358", "K11n155", "K11n169"]
         for K in Link.list(.knot, crossing: 3 ... 11) {
             if skip.contains(K.name) {
                 continue
