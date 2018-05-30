@@ -6,12 +6,6 @@
 //  Copyright © 2018年 Taketo Sano. All rights reserved.
 //
 
-protocol A{}
-struct S<X> {}
-
-extension S: A where X == Int {}
-extension S: A where X == String {}
-
 import Foundation
 
 public typealias ComplexNumber = Complex<𝐑>
@@ -96,7 +90,46 @@ public struct Complex<R: Ring>: Ring {
     }
 }
 
-extension Complex: EuclideanRing, Field, NormedSpace where R == 𝐑 {
+public enum _𝐑or𝐙 {
+    case 𝐑(𝐑)
+    case 𝐙(𝐙)
+}
+
+public protocol _𝐑or𝐙Protocol {
+    var _value: _𝐑or𝐙 { get }
+}
+
+extension 𝐑: _𝐑or𝐙Protocol {
+    public var _value: _𝐑or𝐙 {
+        return .𝐑(self)
+    }
+}
+
+extension 𝐙: _𝐑or𝐙Protocol {
+    public var _value: _𝐑or𝐙 {
+        return .𝐙(self)
+    }
+}
+
+extension Complex where R: _𝐑or𝐙Protocol {
+    enum _𝐑or𝐙 {
+        case 𝐑(Complex<𝐑>)
+        case 𝐙(Complex<𝐙>)
+    }
+
+    var _value: _𝐑or𝐙 {
+        switch (self.x._value, self.y._value) {
+        case (.𝐑(let x), .𝐑(let y)):
+            return .𝐑(Complex<𝐑>(x, y))
+        case (.𝐙(let x), .𝐙(let y)):
+            return .𝐙(Complex<𝐙>(x, y))
+        default:
+            fatalError()
+        }
+    }
+}
+
+extension Complex: Field, NormedSpace where R == 𝐑 {
     public init(from r: 𝐐) {
         self.init(r)
     }
@@ -134,13 +167,25 @@ extension Complex: EuclideanRing, Field, NormedSpace where R == 𝐑 {
 
 public typealias GaussInt = Complex<𝐙>
 
-extension Complex: EuclideanRing where R == 𝐙 { // 👈
+extension Complex: EuclideanRing where R: _𝐑or𝐙Protocol { // 👈
     public func eucDiv(by b: Complex<R>) -> (q: Complex<R>, r: Complex<R>) {
-        fatalError()
+        switch (self._value, b._value) {
+        case (.𝐑(let zelf), .𝐑(let b)):
+            return (zelf * b.inverse! as! Complex<R>, .zero) // Use default implement copy, But
+        case (.𝐙(let zelf), .𝐙(let b)):
+            fatalError("TODO")
+        default:
+            fatalError()
+        }
     }
     
     public var eucDegree: Int {
-        fatalError()
+        switch self._value {
+        case .𝐑(let zelf):
+            return zelf == .zero ? 0 : 1 // Use default implement copy
+        case .𝐙(let zelf):
+            fatalError("TODO")
+        }
     }
 }
 
