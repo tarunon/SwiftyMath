@@ -6,29 +6,97 @@
 //  Copyright © 2018年 Taketo Sano. All rights reserved.
 //
 
+protocol A{}
+struct S<X> {}
+
+extension S: A where X == Int {}
+extension S: A where X == String {}
+
 import Foundation
 
+public typealias ComplexNumber = Complex<𝐑>
 public typealias 𝐂 = ComplexNumber
 
-public struct ComplexNumber: Field, NormedSpace, ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral {
-    public typealias IntegerLiteralType = Int
-    public typealias FloatLiteralType = Double
-    
-    private let x: 𝐑
-    private let y: 𝐑
-    
-    public init(integerLiteral n: Int) {
-        self.init(n)
-    }
-    
-    public init(floatLiteral x: Double) {
-        self.init(𝐑(x))
-    }
+public struct Complex<R: Ring>: Ring {
+    private let x: R
+    private let y: R
     
     public init(from x: 𝐙) {
-        self.init(x)
+        self.init(R(from: x))
     }
     
+    public init(_ x: R) {
+        self.init(x, .zero)
+    }
+    
+    public init(_ x: R, _ y: R) {
+        self.x = x
+        self.y = y
+    }
+    
+    public static var imaginaryUnit: Complex<R> {
+        return Complex(.zero, .identity)
+    }
+    
+    public var realPart: R {
+        return x
+    }
+    
+    public var imaginaryPart: R {
+        return y
+    }
+    
+    public var conjugate: Complex<R> {
+        return Complex(x, -y)
+    }
+
+    public var inverse: Complex? {
+        let r2 = x * x + y * y
+        if let inv = r2.inverse {
+            return Complex(x * inv, -y * inv)
+        } else {
+            return nil
+        }
+    }
+    
+    public static func ==(lhs: Complex<R>, rhs: Complex<R>) -> Bool {
+        return (lhs.x == rhs.x) && (lhs.y == rhs.y)
+    }
+    
+    public static func +(a: Complex<R>, b: Complex<R>) -> Complex<R> {
+        return Complex(a.x + b.x, a.y + b.y)
+    }
+    
+    public static prefix func -(a: Complex<R>) -> Complex<R> {
+        return Complex(-a.x, -a.y)
+    }
+    
+    public static func *(a: Complex<R>, b: Complex<R>) -> Complex<R> {
+        return Complex(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x)
+    }
+    
+    public var hashValue: Int {
+        let p = 104743
+        return (x.hashValue % p) &+ (y.hashValue % p) * p
+    }
+    
+    public var description: String {
+        return (x != .zero && y != .zero) ? "\(x) + \(y)i" :
+                         (y == .identity) ? "i" :
+                             (y != .zero) ? "\(y)i"
+                                          : "\(x)"
+    }
+    
+    public static var symbol: String {
+        if R.self == 𝐑.self {
+            return "𝐂"
+        } else {
+            return "\(R.symbol)[i]"
+        }
+    }
+}
+
+extension Complex: EuclideanRing, Field, NormedSpace where R == 𝐑 {
     public init(from r: 𝐐) {
         self.init(r)
     }
@@ -41,29 +109,8 @@ public struct ComplexNumber: Field, NormedSpace, ExpressibleByIntegerLiteral, Ex
         self.init(𝐑(x), 0)
     }
     
-    public init(_ x: 𝐑) {
-        self.init(x, 0)
-    }
-    
-    public init(_ x: 𝐑, _ y: 𝐑) {
-        self.x = x
-        self.y = y
-    }
-    
     public init(r: 𝐑, θ: 𝐑) {
         self.init(r * cos(θ), r * sin(θ))
-    }
-    
-    public static var imaginaryUnit: 𝐂 {
-        return 𝐂(0, 1)
-    }
-    
-    public var realPart: 𝐑 {
-        return x
-    }
-    
-    public var imaginaryPart: 𝐑 {
-        return y
     }
     
     public var abs: 𝐑 {
@@ -83,45 +130,30 @@ public struct ComplexNumber: Field, NormedSpace, ExpressibleByIntegerLiteral, Ex
         let t = acos(x / r)
         return (y >= 0) ? t : 2 * π - t
     }
-    
-    public var conjugate: 𝐂 {
-        return 𝐂(x, -y)
-    }
+}
 
-    public var inverse: 𝐂? {
-        let r2 = x * x + y * y
-        return r2 == 0 ? nil : 𝐂(x / r2, -y / r2)
+public typealias GaussInt = Complex<𝐙>
+
+extension Complex: EuclideanRing where R == 𝐙 { // 👈
+    public func eucDiv(by b: Complex<R>) -> (q: Complex<R>, r: Complex<R>) {
+        fatalError()
     }
     
-    public static func ==(lhs: 𝐂, rhs: 𝐂) -> Bool {
-        return (lhs.x == rhs.x) && (lhs.y == rhs.y)
+    public var eucDegree: Int {
+        fatalError()
     }
-    
-    public static func +(a: 𝐂, b: 𝐂) -> 𝐂 {
-        return 𝐂(a.x + b.x, a.y + b.y)
+}
+
+extension Complex: ExpressibleByIntegerLiteral where R: ExpressibleByIntegerLiteral {
+    public typealias IntegerLiteralType = R.IntegerLiteralType
+    public init(integerLiteral n: R.IntegerLiteralType) {
+        self.init(R(integerLiteral: n))
     }
-    
-    public static prefix func -(a: 𝐂) -> 𝐂 {
-        return 𝐂(-a.x, -a.y)
-    }
-    
-    public static func *(a: 𝐂, b: 𝐂) -> 𝐂 {
-        return 𝐂(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x)
-    }
-    
-    public var hashValue: Int {
-        let p = 104743
-        return (x.hashValue % p) &+ (y.hashValue % p) * p
-    }
-    
-    public var description: String {
-        return (x != 0 && y != 0) ? "\(x) + \(y)i" :
-                         (y == 1) ? "i" :
-                         (y != 0) ? "\(y)i"
-                                  : "\(x)"
-    }
-    
-    public static var symbol: String {
-        return "𝐂"
+}
+
+extension Complex: ExpressibleByFloatLiteral where R: ExpressibleByFloatLiteral {
+    public typealias FloatLiteralType = R.FloatLiteralType
+    public init(floatLiteral x: R.FloatLiteralType) {
+        self.init(R(floatLiteral: x))
     }
 }
